@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Automatic Modeling of Articulated Objects via a Vision-Language Foundation Model.">
+  <meta name="keywords" content="VLM, robotics">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>articulate-anything</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics. TODO: get the analytics -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script> -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/index.js"></script>
+  <!-- code highlight -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+
+  <style>
+    .demo-container {
+      display: flex;
+      flex-wrap: nowrap;
+      /* Changed from wrap to nowrap */
+      align-items: flex-start;
+      /* Align items to the top */
+    }
+
+    .demo-gallery {
+      flex: 0 0 50%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 0px;
+    }
+
+    .demo-gallery img {
+      /* change this to  affect no. of images per row.
+      For example, 25% - 4px means 100/25 = 4 images per row */
+      width: calc(25% - 4px);
+      height: auto;
+      object-fit: cover;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .demo-preview {
+      flex: 0 0 50%;
+      padding-left: 5px;
+      position: sticky;
+      top: 20px;
+      /* Adjust as needed */
+    }
+
+    #demo-video-1 {
+      width: 100%;
+      height: 300px;
+      max-width: 400px;
+      object-fit: contain;
+      border-radius: 5px;
+    }
+
+    #imgtext-1 {
+      margin-top: 10px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .code-container {
+      position: relative;
+      max-height: 400px;
+      /* Adjust based on your layout */
+      overflow-y: auto;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      flex-grow: 1;
+      width: 100%;
+      max-width: none;
+    }
+
+    .code-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .code-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .code-container::-webkit-scrollbar-thumb {
+      background: #888;
+    }
+
+    .code-container::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    pre {
+      margin: 0;
+      padding: 0;
+    }
+
+    code {
+      font-size: 14px;
+      line-height: 1.4;
+      padding: 5px;
+      display: block;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    code {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .image-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .image-item {
+      flex: 1 1 300px;
+      max-width: 100%;
+      text-align: center;
+    }
+
+    .image-item img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .subtitle {
+      font-size: 2rem;
+      margin-top: 0.5rem;
+      /* Adjust this value to control the space between title and subtitle */
+      display: block;
+      /* Ensures the subtitle is on a new line */
+      width: 100%;
+      /* Makes sure it takes full width */
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 48%;
+      /* padding-bottom: 42.25%; */
+      /* 16:9 aspect ratio */
+      margin: 0 auto;
+    }
+
+
+    .method-video-container {
+      position: relative;
+      width: 100%;
+      /* padding-bottom: 42.25%; */
+      /* 16:9 aspect ratio */
+      margin: 0 auto;
+    }
+
+
+
+    #replay-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #demo-video {
+      padding-top: 0rem;
+      padding-bottom: 2rem;
+    }
+
+    .hero-body {
+      padding-bottom: 0rem;
+    }
+
+    .section {
+      padding-top: 2rem;
+    }
+
+    .navbar {
+      background-color: #f5f5f5;
+      /* background-color: #333; */
+      /* move with scroll */
+      position: sticky;
+      top: 0;
+      overflow: hidden;
+      /* padding-bottom: 0rem; */
+      padding-bottom: 0;
+      margin-bottom: 0;
+
+    }
+
+    .navbar-item {
+      font-weight: bold;
+    }
+
+    /* 
+    .navbar.is-fixed-top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+    } */
+
+
+    .is-active {
+      color: #3273dc !important;
+      font-weight: bold;
+    }
+
+    /* Make sure that navbar doesn't occlude the section name when navigating to it */
+    section {
+      scroll-margin-top: 40px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Add this code after the <body> tag and before your main content -->
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-menu is-active">
+      <div class="navbar-start">
+        <a class="navbar-item" href="#abstract">Abstract</a>
+        <a class="navbar-item" href="#overview">Overview</a>
+        <a class="navbar-item" href="#method">Method</a>
+        <a class="navbar-item" href="#demo">In-the-wild Reconstructions</a>
+        <a class="navbar-item" href="#robotics-application">Robotics Application</a>
+        <a class="navbar-item" href="#quantitative-results">Quantitative Results</a>
+        <a class="navbar-item" href="#bibtex">BibTeX</a>
+      </div>
+    </div>
+  </nav>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">
+              <span class="logo"></span>
+              <span class="small-caps">articulate-anything</span>
+              <span class="subtitle">Automatic Modeling of Articulated Objects via a Vision-Language Foundation
+                Model</span>
+            </h1>
+            <!-- <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://vlongle.github.io">Long Le</a></span>
+              <a href="mailto:vlongle@seas.upenn.edu">
+                <span class="icon">
+                  <i class="fa fa-envelope"></i>
+                </span>
+              </a>,
+              <span class="author-block">
+                <a href="https://www.jchunx.dev/">Jason Xie</a>,</span>
+              <span class="author-block">
+                <a href="https://yueyang1996.github.io/">Yue Yang</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://jasonma2016.github.io/">Jason Ma</a>,
+              </span> <br>
+              <span class="author-block">
+                <a href="https://vedder.io/">Kyle Vedder</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://arjun-krishna.github.io/">Arjun Krishna</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://www.seas.upenn.edu/~dineshj/">Dinesh Jayaraman</a>,
+              </span>
+              <span class="author-block">
+                <a href="https://www.seas.upenn.edu/~eeaton/">Eric Eaton</a>
+              </span>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">University of Pennsylvania</span>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <span class="icon">
+                  <i class="fa fa-envelope"></i>
+                </span>
+                Corresponding author: vlongle@seas.upenn.edu
+              </span>
+            </div>
+            <div class="column has-text-centered">
+              <div class="publication-links">
+            <span class="link-block">
+              <a target="_blank" href="https://arxiv.org/abs/2310.12931"
+                class="external-link button is-normal is-rounded is-dark">
+                <span class="icon">
+                  <i class="ai ai-arxiv"></i>
+                </span>
+                <span>arXiv</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <a target="_blank" href="assets/eureka_paper.pdf"
+                class="external-link button is-normal is-rounded is-dark">
+                <span class="icon">
+                  <i class="fas fa-file-pdf"></i>
+                </span>
+                <span>PDF</span>
+              </a>
+              <a target="_blank" href="https://articulate-anything.github.io/"
+                class="external-link button is-normal is-rounded is-dark">
+                <span class="icon">
+                  <i class="fab fa-github"></i>
+                </span>
+                <span>Code</span>
+              </a>
+            </span> -->
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="section" id="demo-video">
+    <div class="container is-max-desktop">
+      <div class="content has-text-centered">
+        <div class="video-container">
+          <video id="replay-video" controls preload playsinline autoplay>
+            <source src="videos/articulate_anything_tiktokified.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="abstract">
+    <div class="container is-max-desktop">
+      <!-- Abstract. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              Interactive 3D simulated objects are crucial in AR/VR, animations, and robotics, serving as the
+              foundational elements that drive immersive experiences and advanced automation.
+              However, creating these interactable objects (i.e., articulation) requires extensive human effort and
+              expertise,
+              limiting their broader applications.
+              To overcome this challenge, we present <span class="dnerf">Articulate-Anything</span>, a system that
+              automates the articulation of diverse, complex objects from different input modalities, including text,
+              images, and videos.
+              <span class="dnerf">Articulate-Anything</span> leverages Vision-Language Models (VLMs) to generate
+              Python
+              programs compilable into articulated Unified Robot Description Format (URDF) files. Our system consists
+              of
+              a mesh retrieval mechanism and
+              dual actor-critic closed-loop systems. The agentic system is capable of automatically generating
+              articulation, inspecting simulated predictions against ground-truths, and self-correcting errors.
+              Qualitative evaluations demonstrate <span class="dnerf">Articulate-Anything</span>'s capability to
+              articulate complex and even ambiguous object affordances by leveraging rich grounded inputs. In
+              extensive
+              quantitative experiments on the standard PartNet-Mobility dataset,
+              <span class="dnerf">Articulate-Anything</span> substantially outperforms prior work in automatic
+              articulation, increasing the success rate from 8.7-11.6% to 75%, setting a new bar for state-of-art
+              performance. Lastly, to showcase an application, we train multiple robotic policies using generated
+              assets, demonstrating the utility of articulation for finer-grained manipulation beyond pick and place.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!--/ Abstract. -->
+
+
+      <section id="overview">
+
+
+
+        <!-- <h2>Audio Overview <span style="font-size: 0.8em;">(generated using <a
+                        href="https://notebooklm.google.com/">NotebookLM</a>)</span></h2>
+            <hr> -->
+        <div class="container is-max-widescreen">
+          <div class="rows">
+            <div class="rows is-centered">
+              <div class="row is-full-width">
+                <h2 class="title is-3"><span class="dvima">Overview</span>
+                </h2>
+
+                <div class="image-item">
+                  <img src="assets/images/articulate-anything_teaser8.png" alt="Baseline Comparisons">
+                  <!-- <p class="image-caption">Figure 1: Joint prediction success rate compared to other baselines</p> -->
+                </div>
+                <p style="font-size: 125%; margin-bottom: 20px;">
+                  <span class="dnerf">Articulate-Anything</span> is a state-of-the-art method for articulating diverse
+                  in-the-wild objects from diverse input modalities, including
+                  text, images, and videos. We can create high-quality digital twins in simulation that can be used to
+                  train robotic skills among
+                  other applications in VR/AR and animation.
+
+                  <br>
+                  Listen to a podcast-style audio description of our work (generated using <a target="_blank"
+                    rel="noopener noreferrer" href="https://notebooklm.google.com/">NotebookLM</a>)!
+                </p>
+                <div class="audio-container">
+                  <audio controls>
+                    <source src="assets/articulate_anything_podcast_v2_V3_V2.mp3" type="audio/mp3">
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+                <p class="caption">
+                  Listen to a high-level overview of Articulate-Anything.
+                </p>
+      </section>
+
+      <style>
+        .audio-container {
+          width: 100%;
+          max-width: 500px;
+          margin: 20px auto;
+          padding: 15px;
+          background-color: #f0f0f0;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .audio-container audio {
+          width: 100%;
+        }
+
+        .caption {
+          text-align: center;
+          font-style: italic;
+          margin-top: 10px;
+          color: #666;
+        }
+      </style>
+
+
+      <section class="section" id="method">
+        <div class="container is-max-widescreen">
+          <div class="rows">
+            <div class="rows is-centered">
+              <div class="row is-full-width">
+                <h2 class="title is-3"><span class="dvima">Method</span></h2>
+                <p style="font-size: 125%">
+                  <!-- Content for Method will be added here -->
+                  <span class="dnerf">Articulate-Anything</span> uses a series of specialized VLM systems to
+                  automatically generate digital twins
+                  from any human-API inputs: text, images or videos.
+                </p>
+              </div>
+            </div>
+            <div class="method-video-container">
+              <video controls>
+                <source src="videos/articulate_anything_method_V1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <p class="caption">
+              See a walk-through of Articulate-Anything's system with AI voice from <a target="_blank"
+                rel="noopener noreferrer" href="https://neets.ai/">neets.ai</a>.
+            </p>
+
+          </div>
+        </div>
+      </section>
+    </div>
+    </div>
+  </section>
+
+
+
+  <!-- Demo -->
+
+
+  <section class="section" id="demo">
+    <div class="container is-max-widescreen">
+      <div class="rows">
+        <div class="rows is-centered">
+          <div class="row is-full-width">
+            <h2 class="title is-3"><span class="dvima"> In-the-wild
+                reconstructions</span></h2>
+            <p style="font-size: 125%">
+              In this demo, we visualize the articulation results for in-the-wild videos. These videos were
+              casually
+              captured on an iPhone (e.g., titled angles) in cluttered environments, showing <span
+                class="dnerf">Articulate-Anything</span>'s ability to handle
+              <b>diverse, complex, and realistic</b> object affordances.
+
+              <br>
+              Note that <span class="dnerf">Articulate-Anything</span> can resolve <b>ambiguous affordance </b> by
+              leveraging grounded
+              video inputs. For example, double-hung windows can potentially either slide or tip to open. This
+              affordance is not clear
+              from static image. When <span class="dnerf">Articulate-Anything</span> is shown a demonstration video, it
+              can accurately produce
+              the desired model in simulation.
+              <br> <br>
+              Below, we show the Python output generated by our system and the corresponding digital twin rendered in <a
+                target="_blank" rel="noopener noreferrer" href="https://sapien.ucsd.edu/">Sapien</a> simulator.
+
+            </p>
+          </div>
+        </div>
+      </div>
+      <br>
+      <div class="demo-container">
+        <div class="demo-gallery">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_lab_toilet.webp" width="30%"
+            style="border-radius: 5px;" alt='<b>Toilet</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/lab_toilet/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_oven.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Oven</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/oven/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_chair.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Chair</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/chair/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_simple_drawer.webp" width="30%"
+            style="border-radius: 5px;" alt='<b>Drawer</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/simple_drawer/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_suitcase.webp" width="30%"
+            style="border-radius: 5px;" alt='<b>Suitcase</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/suitcase/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_window.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Window</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/window/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_laptop.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Laptop</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/laptop/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_monitor.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Display</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/monitor/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_microwave.webp" width="30%"
+            style="border-radius: 5px;" alt='<b>Microwave</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/microwave/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_box.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Box</b>, articulate-anything:
+                              [sep]
+                              assets/articulation/box/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_dishwasher.webp" width="30%"
+            style="border-radius: 5px;" alt='<b>Dishwasher</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/dishwasher/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_fridge.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Fridge</b>, articulate-anything:
+                        [sep]
+                        assets/articulation/fridge/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_kitchen_pot.webp" width="30%"
+            style="border-radius: 5px;" alt='<b>Kitchen pot</b>, articulate-anything:
+                              [sep]
+                              assets/articulation/kitchen_pot/joint_pred.txt' onclick="populateDemo(this, 1);">
+
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_door.webp" width="30%" style="border-radius: 5px;"
+            alt='<b>Door</b>, articulate-anything:
+                                    [sep]
+                                    assets/articulation/door/joint_pred.txt' onclick="populateDemo(this, 1);">
+          <img src="datasets/in-the-wild-dataset/inputs/resize_aug_washing_machine.webp" width="30%"
+            style="border-radius: 5px;" alt='<b>Washing machine</b>, articulate-anything:
+                                                    [sep]
+                                                    assets/articulation/washing_machine/joint_pred.txt'
+            onclick="populateDemo(this, 1);">
+
+
+        </div>
+
+        <div class="demo-preview">
+          <video id="demo-video-1" autoplay loop muted webkit-playsinline playsinline
+            onclick="setAttribute('controls', 'true');">
+            <source id="expandedImg-1" src="videos/placeholder.mp4" type="video/mp4">
+            <!-- <video id="replay-video" controls preload playsinline width="75%"> -->
+          </video>
+          <div id="imgtext-1">Select a real-world video above:</div>
+          <div class="code-container">
+            <pre><code class="language-python" id="answer-1">Articulate-anything response shown within code block.</code></pre>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="robotics-application">
+    <div class="container is-max-widescreen">
+      <div class="rows">
+        <div class="rows is-centered">
+          <div class="row is-full-width">
+            <h2 class="title is-3"><span class="dvima"> Robotics Application</span>
+            </h2>
+            <p style="font-size: 125%; margin-bottom: 20px;">
+              Without articulation, objects can only afford trivial interaction such as pick and place. We show that
+              articulate <span class="dnerf">Articulate-Anything</span>'s output can be used to
+              create digital twins in simulation for robotic training of <b>finer-grained manipulation skills</b>.
+              Here, we visualize the policies trained using
+              PPO
+              in <a target="_blank" rel="noopener noreferrer" href="https://robosuite.ai/">Robosuite</a>.
+
+            </p>
+            <div class="container" style="overflow:hidden;">
+              <div id="robotics_carousel" class="carousel">
+                <div class="item-1 image-caption-container">
+                  <div class="caption">Closing oven door</div>
+                  <video poster="" autoplay muted loop style="pointer-events: none; width: 450px;">
+                    <source src="assets/picked_videos/CloseOven2/trim.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <div class="item-2 image-caption-container">
+                  <div class="caption">Closing laptop lid</div>
+                  <video poster="" autoplay muted loop style="pointer-events: none; width: 450px;">
+                    <source src="assets/picked_videos/LiftLaptop2/trim.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <div class="item-3 image-caption-container">
+                  <div class="caption">Closing toilet lid</div>
+                  <video poster="" autoplay muted loop style="pointer-events: none; width: 450px;">
+                    <source src="assets/picked_videos/LiftToilet/trim.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <div class="item-4 image-caption-container">
+                  <div class="caption">Closing cabinet door</div>
+                  <video poster="" autoplay muted loop style="pointer-events: none; width: 450px;">
+                    <source src="assets/picked_videos/OpenCabinetRev2/trim.mp4" type="video/mp4">
+                  </video>
+                </div>
+                <div class="item-5 image-caption-container">
+                  <div class="caption">Closing cabinet drawer</div>
+                  <video poster="" autoplay muted loop style="pointer-events: none; width: 450px;">
+                    <source src="assets/picked_videos/OpenCabinetSlide2/trim.mp4" type="video/mp4">
+                  </video>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bulma-carousel@4.0.3/dist/js/bulma-carousel.min.js"></script>
+    <script>
+      bulmaCarousel.attach('#robotics_carousel', {
+        slidesToScroll: 1,
+        slidesToShow: 2,
+        loop: true,
+        autoplay: true,
+        autoplaySpeed: 3000,
+      });
+    </script>
+  </section>
+
+
+
+
+  <!-- Updated Quantitative Results section -->
+  <section class="section" id="quantitative-results">
+    <div class="container is-max-widescreen">
+      <div class="rows">
+        <div class="rows is-centered">
+          <div class="row is-full-width">
+            <h2 class="title is-3"><span class="dvima">Quantitative Results</span>
+            </h2>
+            <div class="image-grid"></div>
+
+            <p class="is-size-5">
+              Prior works such as URDFormer and Real2code rely on impoverished inputs such as cropped images or text
+              bounding box coordinates. Impoverished inputs also mean that their articulation had to be done on an open
+              loop.
+
+              <br>
+
+              On the standard PartNet-Mobility dataset, <span class="dnerf">Articulate-Anything</span>, leveraging
+              grounded video inputs and closed-loop actor-critic system,
+              <strong>substantially</strong> outperforms these prior works in automatic articulation, setting a new bar
+              in
+              state-of-the-art
+              performance.
+
+            </p> <br />
+
+
+            <div class="image-item">
+              <img src="assets/images/baselines.png" alt="Baseline Comparisons">
+              <p class="image-caption">Articulate-anything has subsantially higher joint prediction success rate
+                compared to other baselines.</p>
+            </div>
+
+
+            <p class="is-size-5">
+              In an ablation experiment, we found that indeed richer and more
+              grounded modalities such as videos
+              enables higher articulation accuracy in our own system.
+            </p> <br />
+
+
+            <div class="image-item">
+              <img src="assets/images/input_modality.png" alt="Input Modality Analysis">
+              <p class="image-caption">More grounded visual inputs such as images or videos improve accuracies in all
+                articulation tasks.</p>
+            </div>
+
+            <p class="is-size-5">
+              Finally, by leveraging a visual critic, <span class="dnerf">Articulate-Anything</span> can self-evaluate
+              its
+              predictions and self-improve over subsequent iterations.
+
+            </p><br />
+
+            <div class="image-item">
+              <img src="assets/images/auto_improv.png" alt="Automatic Improvement">
+              <p class="image-caption">Articulate-anything can automatically refine and improve its predictions over
+                subsequent iterations.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+
+
+
+
+  <section class="section" id="bibtex">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@article{articulate-anything2024,
+  <!-- author    = {Park, Keunhong and Sinha, Utkarsh and Barron, Jonathan T. and Bouaziz, Sofien and Goldman, Dan B and Seitz, Steven M. and Martin-Brualla, Ricardo},
+  title     = {Nerfies: Deformable Neural Radiance Fields},
+  journal   = {ICCV},
+  year      = {2021}, -->
+}</code></pre>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="content has-text-centered">
+        <a class="icon-link" href="../papers/articulate-anything.pdf" class="external-link" disabled>
+          <i class="fas fa-file-pdf"></i>
+        </a>
+        <a class="icon-link" href="https://arxiv.org/abs/2312.09067" class="external-link" disabled>
+          <i class="ai ai-arxiv"></i>
+        </a>
+        <a class="icon-link" href="https://github.com/articulate-anything" class="external-link" disabled>
+          <i class="fab fa-github"></i>
+        </a>
+      </div>
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content" , style="text-align: center;">
+            <p>
+              This website was developed by referencing <a href="https://github.com/nerfies/nerfies.github.io">this</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+</body>
+
+
+
+<script>
+
+  timeoutIds = [];
+
+  function populateDemo(imgs, num) {
+    // Get the expanded image
+    var expandImg = document.getElementById("expandedImg-" + num);
+    // Get the image text
+    var imgText = document.getElementById("imgtext-" + num);
+    var answer = document.getElementById("answer-" + num);
+
+    // Use the same src in the expanded image as the image being clicked on from the grid
+    // expandImg.src = imgs.src.replace(".png", ".mp4");
+    expandImg.src = imgs.src.replace(".webp", ".mp4");
+    expandImg.src = expandImg.src.replace("resize_", "pred_");
+    expandImg.src = expandImg.src.replace("inputs", "outputs");
+    var video = document.getElementById('demo-video-' + num);
+    // or video = $('.video-selector')[0];
+    video.pause()
+    video.load();
+    video.play();
+    video.removeAttribute('controls');
+
+    console.log(expandImg.src);
+    // Use the value of the alt attribute of the clickable image as text inside the expanded image
+    var qa = imgs.alt.split("[sep]");
+    imgText.innerHTML = qa[0];
+    answer.innerHTML = "";
+    // Show the container element (hidden with CSS)
+    expandImg.parentElement.style.display = "block";
+    for (timeoutId of timeoutIds) {
+      clearTimeout(timeoutId);
+    }
+
+    // NOTE (wliang): Modified from original to read from file instead
+    fetch(qa[1])
+      .then(response => response.text())
+      .then(contents => {
+        // Call the processData function and pass the contents as an argument
+        typeWriter(contents, 0, qa[0], num);
+      })
+      .catch(error => console.error('Error reading file:', error));
+  }
+
+  function typeWriter(txt, i, q, num) {
+    var imgText = document.getElementById("imgtext-" + num);
+    var answer = document.getElementById("answer-" + num);
+    if (imgText.innerHTML == q) {
+      for (let k = 0; k < 5; k++) {
+        if (i < txt.length) {
+          if (txt.charAt(i) == "\\") {
+            answer.innerHTML += "\n";
+            i += 1;
+          } else {
+            answer.innerHTML += txt.charAt(i);
+          }
+          i++;
+        }
+      }
+      hljs.highlightAll();
+      timeoutIds.push(setTimeout(typeWriter, 1, txt, i, q, num));
+    }
+  }
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const navLinks = document.querySelectorAll('.navbar-item');
+    const sections = Array.from(navLinks).map(link => {
+      const sectionId = link.getAttribute('href');
+      return document.querySelector(sectionId);
+    });
+
+    function changeLinkState() {
+      let index = sections.length;
+
+      while (--index && window.scrollY + 50 < sections[index].offsetTop) { }
+
+      navLinks.forEach((link) => link.classList.remove('is-active'));
+      navLinks[index].classList.add('is-active');
+    }
+
+    changeLinkState();
+    window.addEventListener('scroll', changeLinkState);
+  });
+
+
+
+</script>
+
+
+</html>
