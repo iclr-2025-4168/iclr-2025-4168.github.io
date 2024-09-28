@@ -41,6 +41,8 @@
   <script src="./static/js/index.js"></script>
 
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chart.css/0.9.0/chart.min.css">
+
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/index.js"></script>
@@ -48,6 +50,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
 
   <style>
     .demo-container {
@@ -256,6 +259,23 @@
     /* Make sure that navbar doesn't occlude the section name when navigating to it */
     section {
       scroll-margin-top: 40px;
+    }
+
+
+
+
+    .chart-container {
+      width: 80%;
+      max-width: 1200px;
+      margin: 0 auto;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .chart-container.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
   </style>
 </head>
@@ -718,6 +738,9 @@
 
   <!-- Updated Quantitative Results section -->
   <section class="section" id="quantitative-results">
+
+
+
     <div class="container is-max-widescreen">
       <div class="rows">
         <div class="rows is-centered">
@@ -742,12 +765,18 @@
 
             </p> <br />
 
+            <div class="chart-container">
+              <canvas id="modelComparisonChart"></canvas>
+              <p class="image-caption">Articulate-anything has subsantially higher joint prediction success rate
+                compared to other baselines.</p>
+            </div>
 
+            <!-- 
             <div class="image-item">
               <img src="assets/images/baselines.png" alt="Baseline Comparisons">
               <p class="image-caption">Articulate-anything has subsantially higher joint prediction success rate
                 compared to other baselines.</p>
-            </div>
+            </div> -->
 
 
             <p class="is-size-5">
@@ -756,9 +785,15 @@
               enables higher articulation accuracy in our own system.
             </p> <br />
 
-
+            <!-- 
             <div class="image-item">
               <img src="assets/images/input_modality.png" alt="Input Modality Analysis">
+              <p class="image-caption">More grounded visual inputs such as images or videos improve accuracies in all
+                articulation tasks.</p>
+            </div> -->
+
+            <div class="chart-container">
+              <canvas id="articulationChart"></canvas>
               <p class="image-caption">More grounded visual inputs such as images or videos improve accuracies in all
                 articulation tasks.</p>
             </div>
@@ -770,11 +805,22 @@
 
             </p><br />
 
-            <div class="image-item">
+            <!-- <div class="image-item">
               <img src="assets/images/auto_improv.png" alt="Automatic Improvement">
               <p class="image-caption">Articulate-anything can automatically refine and improve its predictions over
                 subsequent iterations.</p>
+            </div> -->
+
+
+            <!-- <div style="display: flex; justify-content: center;"> -->
+            <div class="chart-container">
+              <canvas id="linkPlacementChart"></canvas>
+              <canvas id="jointPredictionChart"></canvas>
+              <p class="image-caption">Articulate-anything can automatically refine and improve its predictions over
+                subsequent iterations.</p>
             </div>
+
+
           </div>
         </div>
       </div>
@@ -915,6 +961,655 @@
   });
 
 
+
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const navLinks = document.querySelectorAll('.navbar-item');
+    const sections = Array.from(navLinks).map(link => {
+      const sectionId = link.getAttribute('href');
+      return document.querySelector(sectionId);
+    });
+
+    function changeLinkState() {
+      let index = sections.length;
+
+      while (--index && window.scrollY + 50 < sections[index].offsetTop) { }
+
+      navLinks.forEach((link) => link.classList.remove('is-active'));
+      navLinks[index].classList.add('is-active');
+    }
+
+    changeLinkState();
+    window.addEventListener('scroll', changeLinkState);
+  });
+
+
+  // Fancy charts
+
+
+  function darkenColor(color, factor = 1.8) {
+    const rgba = color.match(/\d+(\.\d+)?/g).map(Number);
+    return `rgba(${rgba.slice(0, 3).map(c => Math.max(0, Math.min(255, Math.floor(c / factor)))).join(', ')}, ${rgba[3] || 1})`;
+  }
+
+  // Variables to hold animation frames
+  let highlightAnimationFrame1;
+  let highlightAnimationFrame2;
+
+  // Chart data for the first chart
+  const chartData1 = {
+    labels: ['All classes (ID + OOD)', 'Trained classes (ID)', 'Untrained classes (OOD)'],
+    datasets: [
+      {
+        label: 'Articulate Anything',
+        data: [75.0, null, null],
+        backgroundColor: 'rgba(135, 206, 250, 0.8)',  // Light blue
+        borderColor: darkenColor('rgba(135, 206, 250, 0.8)'),
+        borderWidth: 2,
+      },
+      {
+        label: 'URDFormer Oracle',
+        data: [14.6, 24.7, 8.2],
+        backgroundColor: 'rgba(255, 99, 71, 0.8)',  // Red
+        borderColor: darkenColor('rgba(255, 99, 71, 0.8)'),
+        borderWidth: 2,
+      },
+      {
+        label: 'URDFormer DINO',
+        data: [8.7, 20.2, 1.3],
+        backgroundColor: 'rgba(144, 238, 144, 0.8)',  // Light green
+        borderColor: darkenColor('rgba(144, 238, 144, 0.8)'),
+        borderWidth: 2,
+      },
+      {
+        label: 'Real2Code Oracle',
+        data: [11.6, 13.5, 11.1],
+        backgroundColor: 'rgba(221, 160, 221, 0.8)',  // Plum
+        borderColor: darkenColor('rgba(221, 160, 221, 0.8)'),
+        borderWidth: 2,
+      }
+    ]
+  };
+
+  // Chart data for the second chart
+  const chartData2 = {
+    labels: ['Link Placement', 'Joint Prediction'],
+    datasets: [
+      {
+        label: 'Text',
+        data: [0.69, 0.49],
+        backgroundColor: 'rgba(135, 206, 250, 0.8)', // Light blue
+        borderColor: darkenColor('rgba(135, 206, 250, 0.8)'),
+        borderWidth: 2,
+      },
+      {
+        label: 'Image',
+        data: [0.89, 0.54],
+        backgroundColor: 'rgba(255, 99, 132, 0.8)', // Red
+        borderColor: darkenColor('rgba(255, 99, 132, 0.8)'),
+        borderWidth: 2,
+      },
+      {
+        label: 'Video',
+        data: [null, 0.78],
+        backgroundColor: 'rgba(144, 238, 144, 0.8)', // Light green
+        borderColor: darkenColor('rgba(144, 238, 144, 0.8)'),
+        borderWidth: 2,
+      }
+    ]
+  };
+
+  // Create highlight plugin that accepts specific bars to highlight
+  const createHighlightPlugin = (highlightBars) => ({
+    id: 'highlightPlugin',
+    afterDraw: (chart) => {
+      const ctx = chart.ctx;
+      highlightBars.forEach(({ datasetIndex, dataIndex, color }) => {
+        const meta = chart.getDatasetMeta(datasetIndex);
+        if (meta.data[dataIndex]) {
+          const bar = meta.data[dataIndex];
+          const time = Date.now() / 1000;
+          const intensity = Math.sin(time * Math.PI) * 0.5 + 0.5;
+          ctx.save();
+          ctx.shadowColor = `rgba(${color}, ${intensity})`;
+          ctx.strokeStyle = `rgba(${color}, ${intensity})`;
+          ctx.shadowBlur = 10;
+          ctx.lineWidth = 5;
+          const barWidth = bar.width;
+          const barHeight = chart.chartArea.bottom - bar.y;
+          ctx.strokeRect(bar.x - barWidth / 2, bar.y, barWidth, barHeight);
+          ctx.restore();
+        }
+      });
+    }
+  });
+
+  // Highlight bars for the first chart (if any)
+  const highlightBarsChart1 = [
+    { datasetIndex: 0, dataIndex: 0, color: '0, 0, 255' }, // 'All classes' bar on 'articulate anything'
+  ]; // Empty array if no bars to highlight
+
+  // Highlight bars for the second chart
+  const highlightBarsChart2 = [
+    { datasetIndex: 1, dataIndex: 0, color: '255, 0, 0' }, // 'Image' bar on 'Link Placement' (Red)
+    { datasetIndex: 2, dataIndex: 1, color: '0, 255, 0' }  // 'Video' bar on 'Joint Prediction' (Light Green)
+  ];
+
+  function initChart1() {
+    const legendSpacingPlugin = {
+      id: 'legendSpacing',
+      beforeInit: (chart) => {
+        const originalFit = chart.legend.fit;
+        chart.legend.fit = function fit() {
+          originalFit.bind(chart.legend)();
+          this.height += 25;
+        }
+      }
+    };
+
+    const ctx = document.getElementById('modelComparisonChart').getContext('2d');
+
+    const chart1 = new Chart(ctx, {
+      type: 'bar',
+      data: chartData1,
+      options: {
+        responsive: true,
+        layout: {
+          padding: {
+            top: 1
+          }
+        },
+        scales: {
+          x: {
+            stacked: false,
+            ticks: {
+              font: {
+                size: 20,
+                weight: 'bold'
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              font: {
+                size: 18
+              },
+              callback: function (value) {
+                return value + '%';
+              },
+              stepSize: 25
+            },
+            title: {
+              display: true,
+              text: 'Success Rate (%)',
+              font: {
+                size: 24,
+                weight: 'bold'
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              font: {
+                size: 20
+              }
+            },
+            padding: 40
+          },
+          title: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += (context.parsed.y).toFixed(1) + '%';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      },
+      plugins: [legendSpacingPlugin, createHighlightPlugin(highlightBarsChart1), {
+        afterDraw: chart => {
+          const ctx = chart.ctx;
+          chart.data.datasets.forEach((dataset, i) => {
+            chart.getDatasetMeta(i).data.forEach((bar, index) => {
+              const originalData = chartData1.datasets[i].data[index];
+              if (originalData !== null) {
+                const { x, y } = bar.tooltipPosition();
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.font = '18px Arial';
+                ctx.fillText((originalData).toFixed(1) + '%', x, y - 5);
+              }
+            });
+          });
+        }
+      }]
+    });
+    return chart1;
+  }
+
+  function initChart2() {
+    const ctx = document.getElementById('articulationChart').getContext('2d');
+
+    const chart2 = new Chart(ctx, {
+      type: 'bar',
+      data: chartData2,
+      options: {
+        responsive: true,
+        layout: {
+          padding: {
+            top: 1
+          }
+        },
+        scales: {
+          x: {
+            stacked: false,
+            ticks: {
+              font: {
+                size: 20,
+                weight: 'bold'
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            max: 1,
+            ticks: {
+              font: {
+                size: 18
+              },
+              callback: function (value) {
+                return (value * 100) + '%';
+              },
+              stepSize: 0.25
+            },
+            title: {
+              display: true,
+              text: 'Success Rate (%)',
+              font: {
+                size: 24,
+                weight: 'bold'
+              }
+            }
+          },
+        },
+        plugins: {
+          legend: {
+            labels: {
+              font: {
+                size: 20
+              }
+            },
+            padding: 40
+          },
+          title: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += (context.parsed.y * 100).toFixed(0) + '%';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      },
+      plugins: [
+        createHighlightPlugin(highlightBarsChart2),
+        {
+          afterDraw: chart => {
+            const ctx = chart.ctx;
+            chart.data.datasets.forEach((dataset, i) => {
+              chart.getDatasetMeta(i).data.forEach((bar, index) => {
+                const value = dataset.data[index];
+                if (value !== null && value !== undefined) {
+                  const { x, y } = bar.tooltipPosition();
+                  ctx.fillStyle = 'black';
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'bottom';
+                  ctx.font = '18px Arial';
+                  ctx.fillText((value * 100).toFixed(0) + '%', x, y - 5);
+                }
+              });
+            });
+          }
+        }
+      ]
+    });
+    return chart2;
+  }
+
+
+
+  function initChart3() {
+    const ctxLinkPlacement = document.getElementById('linkPlacementChart').getContext('2d');
+    const ctxJointPrediction = document.getElementById('jointPredictionChart').getContext('2d');
+
+    const commonOptions = {
+      responsive: true,
+      layout: {
+        padding: {
+          top: 1
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Iteration',
+            font: {
+              size: 20,
+              weight: 'bold'
+            }
+          },
+          ticks: {
+            font: {
+              size: 20,
+              weight: 'bold'
+            }
+          }
+        },
+        y: {
+          beginAtZero: false,
+          min: 0.70, // Y-axis starts at 70%
+          title: {
+            display: true,
+            text: 'Success Rate (%)',
+            font: {
+              size: 24,
+              weight: 'bold'
+            }
+          },
+          ticks: {
+            stepSize: 0.05, // Steps of 5%
+            callback: function (value) {
+              return (value * 100).toFixed(0) + '%';
+            },
+            font: {
+              size: 18
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            font: {
+              size: 20
+            }
+          },
+          padding: 40
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed.y !== null) {
+                label += (context.parsed.y * 100).toFixed(1) + '%';
+              }
+              return label;
+            }
+          }
+        },
+        title: {
+          display: true,
+          text: '', // Set individually for each chart
+          font: {
+            size: 24,
+            weight: 'bold'
+          }
+        }
+      },
+      animation: {
+        duration: 1500,
+        easing: 'easeOutQuart'
+      }
+    };
+
+    // Plugin to display values on top of each bar
+    const displayValuesPlugin = {
+      id: 'displayValues',
+      afterDatasetsDraw: chart => {
+        const ctx = chart.ctx;
+        chart.data.datasets.forEach((dataset, i) => {
+          chart.getDatasetMeta(i).data.forEach((bar, index) => {
+            const value = dataset.data[index];
+            if (value !== null && value !== undefined) {
+              const { x, y } = bar.tooltipPosition();
+              ctx.fillStyle = 'black';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              ctx.font = '18px Arial';
+              ctx.fillText((value * 100).toFixed(1) + '%', x, y - 5);
+            }
+          });
+        });
+      }
+    };
+
+    // Link Placement Chart with y-axis max set to 95%
+    const linkPlacementChart = new Chart(ctxLinkPlacement, {
+      type: 'bar',
+      data: {
+        labels: ['1', '2'],
+        datasets: [
+          {
+            label: 'Ground Truth',
+            data: [0.802, 0.855],
+            backgroundColor: 'rgba(135, 206, 250, 0.8)', // Light blue
+            borderColor: darkenColor('rgba(135, 206, 250, 0.8)'),
+            borderWidth: 2,
+          },
+          {
+            label: 'Critic',
+            data: [0.840, 0.894],
+            backgroundColor: 'rgba(255, 99, 132, 0.8)', // Red
+            borderColor: darkenColor('rgba(255, 99, 132, 0.8)'),
+            borderWidth: 2,
+          }
+        ]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          ...commonOptions.scales,
+          y: {
+            ...commonOptions.scales.y,
+            max: 0.95 // Max y-axis value set to 95%
+          }
+        },
+        plugins: {
+          ...commonOptions.plugins,
+          title: {
+            ...commonOptions.plugins.title,
+            text: 'Link Placement'
+          }
+        }
+      },
+      plugins: [displayValuesPlugin]
+    });
+
+    // Joint Prediction Chart with y-axis max set to 85%
+    const jointPredictionChart = new Chart(ctxJointPrediction, {
+      type: 'bar',
+      data: {
+        labels: ['1', '2', '3'],
+        datasets: [
+          {
+            label: 'Ground Truth',
+            data: [0.726, 0.748, 0.750],
+            backgroundColor: 'rgba(135, 206, 250, 0.8)', // Light blue
+            borderColor: darkenColor('rgba(135, 206, 250, 0.8)'),
+            borderWidth: 2,
+          },
+          {
+            label: 'Critic',
+            data: [0.751, 0.773, 0.776],
+            backgroundColor: 'rgba(255, 99, 132, 0.8)', // Red
+            borderColor: darkenColor('rgba(255, 99, 132, 0.8)'),
+            borderWidth: 2,
+          }
+        ]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          ...commonOptions.scales,
+          y: {
+            ...commonOptions.scales.y,
+            max: 0.8 // Max y-axis value set to 85%
+          }
+        },
+        plugins: {
+          ...commonOptions.plugins,
+          title: {
+            ...commonOptions.plugins.title,
+            text: 'Joint Prediction'
+          }
+        }
+      },
+      plugins: [displayValuesPlugin]
+    });
+
+    return [linkPlacementChart, jointPredictionChart];
+  }
+
+
+
+
+
+  function animateChart(chartInstance, highlightAnimationFrameVar) {
+    // Store original data
+    const originalData = chartInstance.data.datasets.map(dataset => dataset.data.slice());
+
+    // Set data to zeros
+    chartInstance.data.datasets.forEach(dataset => {
+      dataset.data = dataset.data.map(value => (value === null ? null : 0));
+    });
+    chartInstance.update('none');
+
+    setTimeout(() => {
+      // Restore original data
+      chartInstance.data.datasets.forEach((dataset, i) => {
+        dataset.data = originalData[i];
+      });
+      chartInstance.update();
+    }, 50);
+
+    function animate() {
+      chartInstance.update('none');
+      highlightAnimationFrameVar.value = requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const chart1 = initChart1();
+    const chart2 = initChart2();
+
+    // Create objects to hold the animation frame IDs
+    const highlightAnimationFrameVar1 = { value: null };
+    const highlightAnimationFrameVar2 = { value: null };
+
+
+    const [linkPlacementChart, jointPredictionChart] = initChart3();
+    const highlightAnimationFrameVar3 = { value: null };
+    const highlightAnimationFrameVar4 = { value: null };
+
+
+
+    // Start animations for both charts
+    animateChart(chart1, highlightAnimationFrameVar1);
+    animateChart(chart2, highlightAnimationFrameVar2);
+
+    // Intersection Observer for the first chart
+    const observer1 = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          animateChart(chart1, highlightAnimationFrameVar1);
+        } else {
+          entry.target.classList.remove('visible');
+          if (highlightAnimationFrameVar1.value) {
+            cancelAnimationFrame(highlightAnimationFrameVar1.value);
+          }
+        }
+      });
+    }, { threshold: 0.1 });
+
+    // Intersection Observer for the second chart
+    const observer2 = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          animateChart(chart2, highlightAnimationFrameVar2);
+        } else {
+          entry.target.classList.remove('visible');
+          if (highlightAnimationFrameVar2.value) {
+            cancelAnimationFrame(highlightAnimationFrameVar2.value);
+          }
+        }
+      });
+    }, { threshold: 0.1 });
+
+    observer1.observe(document.querySelector('#modelComparisonChart').parentElement);
+    observer2.observe(document.querySelector('#articulationChart').parentElement);
+
+    // Intersection Observer for the new charts
+    const observer3 = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          animateChart(linkPlacementChart, highlightAnimationFrameVar3);
+          animateChart(jointPredictionChart, highlightAnimationFrameVar4);
+        } else {
+          entry.target.classList.remove('visible');
+          if (highlightAnimationFrameVar3.value) {
+            cancelAnimationFrame(highlightAnimationFrameVar3.value);
+          }
+          if (highlightAnimationFrameVar4.value) {
+            cancelAnimationFrame(highlightAnimationFrameVar4.value);
+          }
+        }
+      });
+    }, { threshold: 0.1 });
+
+    observer3.observe(document.querySelector('#linkPlacementChart').parentElement);
+
+
+  });
 
 </script>
 
