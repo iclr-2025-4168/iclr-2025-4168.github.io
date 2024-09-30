@@ -1058,21 +1058,21 @@
     datasets: [
       {
         label: 'Text',
-        data: [0.69, 0.49],
+        data: [0.6857, 0.4897],
         backgroundColor: 'rgba(135, 206, 250, 0.8)', // Light blue
         borderColor: darkenColor('rgba(135, 206, 250, 0.8)'),
         borderWidth: 2,
       },
       {
         label: 'Image',
-        data: [0.89, 0.54],
+        data: [0.8857, 0.5442],
         backgroundColor: 'rgba(255, 99, 132, 0.8)', // Red
         borderColor: darkenColor('rgba(255, 99, 132, 0.8)'),
         borderWidth: 2,
       },
       {
         label: 'Video',
-        data: [null, 0.78],
+        data: [null, 0.7770],
         backgroundColor: 'rgba(144, 238, 144, 0.8)', // Light green
         borderColor: darkenColor('rgba(144, 238, 144, 0.8)'),
         borderWidth: 2,
@@ -1225,108 +1225,110 @@
     });
     return chart1;
   }
+ 
+
 
   function initChart2() {
-    const ctx = document.getElementById('articulationChart').getContext('2d');
+  const ctx = document.getElementById('articulationChart').getContext('2d');
 
-    const chart2 = new Chart(ctx, {
-      type: 'bar',
-      data: chartData2,
-      options: {
-        responsive: true,
-        layout: {
-          padding: {
-            top: 1
-          }
-        },
-        scales: {
-          x: {
-            stacked: false,
-            ticks: {
-              font: {
-                size: 20,
-                weight: 'bold'
-              }
-            }
-          },
-          y: {
-            beginAtZero: true,
-            max: 1,
-            ticks: {
-              font: {
-                size: 18
-              },
-              callback: function (value) {
-                return (value * 100) + '%';
-              },
-              stepSize: 0.25
-            },
-            title: {
-              display: true,
-              text: 'Success Rate (%)',
-              font: {
-                size: 24,
-                weight: 'bold'
-              }
-            }
-          },
-        },
-        plugins: {
-          legend: {
-            labels: {
-              font: {
-                size: 20
-              }
-            },
-            padding: 40
-          },
-          title: {
-            display: false,
-          },
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                let label = context.dataset.label || '';
-                if (label) {
-                  label += ': ';
-                }
-                if (context.parsed.y !== null) {
-                  label += (context.parsed.y * 100).toFixed(0) + '%';
-                }
-                return label;
-              }
-            }
-          }
-        },
-        animation: {
-          duration: 1500,
-          easing: 'easeOutQuart'
+  const chart2 = new Chart(ctx, {
+    type: 'bar',
+    data: chartData2,
+    options: {
+      responsive: true,
+      layout: {
+        padding: {
+          top: 1
         }
       },
-      plugins: [
-        createHighlightPlugin(highlightBarsChart2),
-        {
-          afterDraw: chart => {
-            const ctx = chart.ctx;
-            chart.data.datasets.forEach((dataset, i) => {
-              chart.getDatasetMeta(i).data.forEach((bar, index) => {
-                const value = dataset.data[index];
-                if (value !== null && value !== undefined) {
-                  const { x, y } = bar.tooltipPosition();
-                  ctx.fillStyle = 'black';
-                  ctx.textAlign = 'center';
-                  ctx.textBaseline = 'bottom';
-                  ctx.font = '18px Arial';
-                  ctx.fillText((value * 100).toFixed(0) + '%', x, y - 5);
-                }
-              });
-            });
+      scales: {
+        x: {
+          stacked: false,
+          ticks: {
+            font: {
+              size: 20,
+              weight: 'bold'
+            }
+          }
+        },
+        y: {
+          beginAtZero: true,
+          max: 1,  // Keeps the scale for percentage (100%)
+          ticks: {
+            font: {
+              size: 18
+            },
+            callback: function (value) {
+              return (value * 100).toFixed(0) + '%';  // Whole numbers for the y-axis labels
+            },
+            stepSize: 0.25  // Step size can stay the same, but now will be 25%
+          },
+          title: {
+            display: true,
+            text: 'Success Rate (%)',
+            font: {
+              size: 24,
+              weight: 'bold'
+            }
+          }
+        },
+      },
+      plugins: {
+        legend: {
+          labels: {
+            font: {
+              size: 20
+            }
+          },
+          padding: 40
+        },
+        title: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed.y !== null) {
+                label += (context.parsed.y * 100).toFixed(2) + '%';  // Precise value in tooltip
+              }
+              return label;
+            }
           }
         }
-      ]
-    });
-    return chart2;
-  }
+      },
+      animation: {
+        duration: 1500,
+        easing: 'easeOutQuart'
+      }
+    },
+    plugins: [
+      createHighlightPlugin(highlightBarsChart2),
+      {
+        afterDraw: chart => {
+          const ctx = chart.ctx;
+          chart.data.datasets.forEach((dataset, i) => {
+            chart.getDatasetMeta(i).data.forEach((bar, index) => {
+              const value = dataset.data[index];
+              if (value !== null && value !== undefined) {
+                const { x, y } = bar.tooltipPosition();
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.font = '18px Arial';
+                ctx.fillText((value * 100).toFixed(2) + '%', x, y - 5);  // Precise value on top of bars
+              }
+            });
+          });
+        }
+      }
+    ]
+  });
+  return chart2;
+}
 
 
 
